@@ -2,179 +2,151 @@
 #define SLL_H
 #include <stdexcept>
 #include <utility>
+#include <iostream>
 
 template <typename key_type, typename value_type> class SLL {
 public:
+	class IteratorBase; class IteratorConst; class IteratorVar;
+
+private:
 class ListElement {
+	friend class SLL; friend class IteratorBase;
+	friend class IteratorConst; friend class IteratorVar;
 	public:
+		ListElement(key_type key, value_type value, ListElement* next=nullptr);
+		~ListElement();
+	private:
 		key_type key;
 		value_type value;
 		ListElement* next;
-		ListElement(key_type key, value_type value, ListElement* next=nullptr);
-		~ListElement();
 	};
-
-class Iterator {
-	public:
-		ListElement* current;
-		Iterator(ListElement* current) {
-			this->current = current;
-		}
-		Iterator& operator++() {
-			if (current == nullptr) 
-				throw std::out_of_range("End of list already reached!");
-
-			current = current->next;
-			return *this;
-		}
-		Iterator operator++(int) {
-			if (current == nullptr)
-				throw std::out_of_range("There is no other element!");
-			Iterator old = *this;
-			current = current->next;
-			return *this;
-		}
-
-		friend bool operator == (const Iterator& a, const Iterator& b) { return a.current == b.current; }
-		friend bool operator != (const Iterator& a, const Iterator& b) { return a.current != b.current; }
-
-		std::pair<key_type, value_type> operator*() {
-			return std::pair<key_type, value_type>(current->key, current->value);
-		}
-	};
-
 
 public:
+class IteratorBase {
+	public:
+		IteratorBase(ListElement* current);
+
+		IteratorBase& operator++();
+		IteratorBase operator++(int);
+
+		friend bool operator == (const IteratorBase& a, const IteratorBase& b) { return a.current == b.current; }
+		friend bool operator != (const IteratorBase& a, const IteratorBase& b) { return a.current != b.current; }
+
+	protected:
+		ListElement* current;
+	};
+class IteratorVar : public IteratorBase {
+	public:
+		IteratorVar(ListElement * current);
+		std::pair<key_type &, value_type &> operator*();
+};
+class IteratorConst : public IteratorBase {
+	public:
+		IteratorConst(ListElement* current);
+		std::pair<key_type, value_type> operator*() const;
+
+};
+
+
+private:
 	ListElement* first;
 	ListElement* last;
 	int elements_nr;
+	ListElement* find(const key_type key, int occurence = 1) const;
 
 public:
+	//constructors, destructor, and assignment operator
 	SLL();
 	~SLL();
-	SLL(const SLL& source);
-	SLL(SLL&& source);
-	int get_element_nr();
+	SLL(const SLL& source); //copy constructor, it creates a DEEP copy of an object
+	SLL(SLL&& source); //move constructor, creates a SHALLOW copy and prevents destructor from deleting all elements.
+	SLL& operator=(const SLL& source); //delete all nodes and creates a deep copy
 
-	void insert_front(key_type key, value_type value);
-	void insert_back(key_type key, value_type value);
-	bool insert_middle(key_type key, value_type value, key_type after); //inserting after given key 'after'
+	//Functions for inserting new elements to the lists.
+	void insert_front(const key_type key, const value_type value); //inserts new element of key 'key' and value 'value' at the beginning of the list
+	void insert_back(const key_type key, const value_type value);//inserts new element of key 'key' and value 'value' at end of the list
+	bool insert_middle(const key_type key, const value_type value, const key_type after, int occurence=1); //inserts new element after
+	//element which key is 'after'. Key  
 
-	value_type get_first();
-	value_type get_last();
-	value_type& operator[](key_type key);
-	value_type operator[](key_type) const;
-	bool is_in(key_type key);
+	//Funcitons for accessing list elements.
+	value_type get_first() const;
+	value_type get_last()const;
+	value_type get_value(const key_type key, int occurence=1) const;
 
+	//Functions for deleting list elements
 	void delete_first();
 	void delete_last();
-	bool delete_element(key_type key);
+	bool delete_element(const key_type key, int occurence=1);
+	void clear();
 
-	Iterator begin()const{ return Iterator(first); }
+	//Functions for modyfying elements
+	bool set_key(const key_type key, const key_type new_key, int occurence=1);
+	bool set_value(const key_type key, const value_type value, int occurence = 1);
+
+	// Other functions:
+	bool is_in(key_type key, int occurence) const;
+	IteratorConst begin() const;
+	IteratorVar begin();
+	int get_element_nr();
 };
 
+/// ----- START OF SLL CLASS METHODS IMPLEMENTATIONS -----------
+
+// START OF CONSTRUCTORS IMPLEMENTATIONS
 template<typename key_type, typename value_type>
-value_type SLL<key_type, value_type>::operator[](key_type key) const
+SLL<key_type, value_type>::SLL()
+{
+	first = nullptr;
+	last = nullptr;
+	elements_nr = 0;
+}
+
+template<typename key_type, typename value_type>
+SLL<key_type, value_type>::~SLL()
 {
 	ListElement* current = first;
-	while (current->key != key && current != nullptr) {
-		current = current->next;
+	while (current != nullptr) {
+		ListElement* temp = current->next;
+		delete current;
+		current = temp;
 	}
-	if (current == nullptr) {
-		throw std::out_of_range("The element of given key wasn't found!");
-	}
-	return current->value;
-}
-template<typename key_type, typename value_type>
-inline bool SLL<key_type, value_type>::is_in(key_type key)
-{
-	return false;
+	first = nullptr;
+	last = nullptr;
 }
 
 template<typename key_type, typename value_type>
-value_type& SLL<key_type, value_type>::operator[](key_type key)
-{
-	ListElement* current = first;
-	while (current->key != key && current != nullptr) {
-		current = current->next;
-	}
-	if (current == nullptr) {
-		throw std::out_of_range("The element of given key wasn't found!");
-	}
-	return current->value;
-}
-
-template<typename key_type, typename value_type>
-SLL<key_type, value_type>::ListElement::ListElement(key_type key, value_type value, ListElement* next)
-{
-	this->key = key;
-	this->value = value;
-	this->next = next;
-}
-
-template<typename key_type, typename value_type>
-SLL<key_type, value_type>::ListElement::~ListElement()
-{
-	next = nullptr;
-}
-
-template<typename key_type, typename value_type> void SLL<key_type, value_type>::delete_last()
-{	
-	if (elements_nr == 0) {
-		return;
-	}
+SLL<key_type, value_type>::
+SLL(SLL&& source) : first(source.first), last(source.last), elements_nr(source.elements_nr) {
 	
-	if (elements_nr == 1) {
-		delete first;
-		first = nullptr;
-		last = nullptr;
-		elements_nr = 0;
-		return;
-	}
-
-	ListElement* last_but_one = first;
-	while (last_but_one->next != last) {
-		last_but_one = last_but_one->next;
-	}
-	delete last_but_one->next;
-	last_but_one->next = nullptr;
-	last = last_but_one;
-	elements_nr--;
-
-}
-
-template<typename key_type, typename value_type> bool SLL<key_type, value_type>::delete_element(key_type key)
-{
-	ListElement* to_delete = first;
-	ListElement* before = nullptr;
-	while (to_delete != nullptr && to_delete->key != key) {
-		before = to_delete;
-		to_delete = to_delete->next;
-	}
-
-	if (to_delete == nullptr) {
-		return false;
-	}
-	if (before == nullptr) {
-		first = to_delete->next;
-		if(to_delete == last)
-			last = nullptr;
-	}
-	else
-		before->next = to_delete->next;
+	source.first = nullptr;
+	source.last = nullptr;
+	source.elements_nr = 0;
 	
-	elements_nr--;
-	delete to_delete;
-	return true;
-
 }
 
-template<typename key_type, typename value_type> int SLL<key_type, value_type>::get_element_nr()
-{
-	return elements_nr;
+template<typename key_type, typename value_type>
+SLL<key_type, value_type>& SLL<key_type, value_type>:: operator=(const SLL & source){
+	this->~SLL();
+	for (ListElement* current = source.first; current != nullptr; current = current->next) {
+		this->insert_back(current->key, current->value);
+	}
+	return *this;
 }
 
-template<typename key_type, typename value_type> void SLL<key_type, value_type>::insert_front(key_type key, value_type value)
+template<typename key_type, typename value_type> SLL<key_type, value_type>::
+SLL(const SLL& source) : first(nullptr), last(nullptr), elements_nr(0) {
+	std::cout << "START OF COPY CONSTRUCTOR" << std::endl;
+	for (ListElement* current = source.first; current != nullptr; current = current->next) {
+		this->insert_back(current->key, current->value);
+	}
+	std::cout << "END OF COPY CONSTRUCTOR" << std::endl;
+}
+//END OF CONSTRUCTORS IMPLEMENTATIONS
+
+
+//START OF INSERTING ELEMENTS FUNCTIONS IMPLEMENTATIONS
+template<typename key_type, typename value_type>
+void SLL<key_type, value_type>::insert_front(const key_type key, const value_type value)
 {
 	if (first == nullptr) {
 		first = new ListElement(key, value);
@@ -186,7 +158,8 @@ template<typename key_type, typename value_type> void SLL<key_type, value_type>:
 	elements_nr++;
 }
 
-template<typename key_type, typename value_type> void SLL<key_type, value_type>::insert_back(key_type key, value_type value)
+template<typename key_type, typename value_type>
+void SLL<key_type, value_type>::insert_back(const key_type key, const value_type value)
 {
 	if (last == nullptr) {
 		first = new ListElement(key, value);
@@ -199,42 +172,114 @@ template<typename key_type, typename value_type> void SLL<key_type, value_type>:
 	elements_nr++;
 }
 
-template<typename key_type, typename value_type> bool SLL<key_type, value_type>::insert_middle(key_type key, value_type value, key_type after)
+template<typename key_type, typename value_type>
+bool SLL<key_type, value_type>::insert_middle(const key_type key, const value_type value, const key_type after, int occurence)
 {
-	ListElement* current = first;
-	while (current->key != after && current!=nullptr) {
-		current = current->next;
-	}
-	if (current == nullptr) {
+	ListElement* after_element = find(after, occurence);
+	if (after_element == nullptr)
 		return false;
-	}
-	ListElement * new_element = new ListElement(key, value);
-	new_element->next = current->next;
-	current->next = new_element;
-	elements_nr++;
-	return true;
+
+	after_element->next = new ListElement(key, value, after_element->next);
+	if (after_element == last)
+		last = after_element->next;
+}
+// END OF INSERTING ELEMENTS FUNCTIONS IMPLEMENTATIONS
+
+
+//START OF ACCESSING ELEMENTS FUNCTIONS IMPLEMENTATIONS
+template<typename key_type, typename value_type>
+value_type SLL<key_type, value_type>::get_value(const key_type key, int occurence) const
+{
+	ListElement* element = find(key, occurence);
+	if(element == nullptr)
+		throw std::out_of_range("The element of given key is not in this list!");
+
+	return element->value;
 }
 
-template<typename key_type, typename value_type> value_type SLL<key_type, value_type>::get_first()
+template<typename key_type, typename value_type>
+value_type SLL<key_type, value_type>::get_first() const
 {
-	if (first == nullptr) {
-
+	if (first == nullptr)
 		throw std::out_of_range("This list is empty, there is no first element!");
-	}
+
 	return first->value;
 }
 
-template<typename key_type, typename value_type> value_type SLL<key_type, value_type>::get_last()
+template<typename key_type, typename value_type>
+value_type SLL<key_type, value_type>::get_last() const
 {
 	if (last == nullptr) {
 		throw std::out_of_range("This list is empty, there is no last element!");
 	}
 	return last->value;
 }
+// END OF ACCESSING ELEMENTS FUNCTIONS IMPLEMENTATIONS
 
-template<typename key_type, typename value_type> void SLL<key_type, value_type>::delete_first()
+
+//START OF DELETING ELEMENTS FUNCTIONS IMPLEMENTATIONS
+template<typename key_type, typename value_type>
+void SLL<key_type, value_type>::delete_last()
 {
-	if (first == nullptr){
+	if (elements_nr == 0) {
+		return;
+	}
+
+	if (elements_nr == 1) {
+		delete first;
+		first = nullptr;
+		last = nullptr;
+		elements_nr = 0;
+		return;
+	}
+
+	ListElement* last_but_one = first;
+	for (; last_but_one->next != last; last_but_one = last_but_one->next);
+	delete last_but_one->next;
+	last_but_one->next = nullptr;
+	last = last_but_one;
+	elements_nr--;
+}
+
+template<typename key_type, typename value_type>
+bool SLL<key_type, value_type>::delete_element(const key_type key, int occurence)
+{
+	ListElement* before = nullptr;
+	ListElement* to_delete = first;
+
+	for (int count = 0; to_delete != nullptr; before = to_delete, to_delete = to_delete->next)
+	{
+		if (to_delete->key == key) {
+			count++;
+			if (count == occurence) {
+				if (before == nullptr) {
+					first = first->next;
+				}
+				else {
+					before->next = to_delete->next;
+				}
+				delete to_delete;
+				elements_nr--;
+				return true;
+			}
+			
+		}
+	}
+
+	return false;
+
+}
+
+template<typename key_type, typename value_type>
+void SLL<key_type, value_type>::clear()
+{
+	this->~SLL();
+}
+
+template<typename key_type, typename value_type>
+void SLL<key_type, value_type>::delete_first()
+{
+	if (first == nullptr) {
 		return;
 	}
 	ListElement* new_first = first->next;
@@ -242,45 +287,144 @@ template<typename key_type, typename value_type> void SLL<key_type, value_type>:
 	first = new_first;
 	elements_nr--;
 }
+// END OF DELETING ELEMENTS FUNCTIONS IMPLEMENTATIONS
 
 
-template<typename key_type, typename value_type>  SLL<key_type, value_type>::SLL()
+//START OF MODYFYING  ELEMENTS FUNCTIONS IMPLEMENTATIONS
+template<typename key_type, typename value_type>
+inline bool SLL<key_type, value_type>::set_value(const key_type key, const value_type value, int occurence)
 {
-	std::cout << "START OF CONSTRUCTOR (NORMAL)" << std::endl;
-	first = nullptr;
-	last = nullptr;
-	elements_nr = 0;
-	std::cout << "END OF CONSTRUCTOR (NORMAL)" << std::endl;
+	ListElement* element = find(key, occurence);
+	if (element == nullptr)
+		return false;
+	element->value = value;
+	return true;
 }
 
-template<typename key_type, typename value_type> SLL<key_type, value_type>::~SLL()
+template<typename key_type, typename value_type>
+inline bool SLL<key_type, value_type>::set_key(const key_type key, const key_type new_key, int occurence)
 {
-	std::cout << "START OF DECONSTRUCTOR" << std::endl;
+	ListElement* element = find(key, occurence);
+	if (element == nullptr)
+		return false;
+	element->key = new_key;
+	return true;
+	
+}
+// END OF MODYFYING ELEMENTS FUNCTIONS IMPLEMENTATIONS
+
+
+//START OF OTHER FUNCTIONS IMPLEMENTATIONS
+template<typename key_type, typename value_type>
+bool SLL<key_type, value_type>::is_in(const key_type key, int occurence) const
+{
 	ListElement* current = first;
-	while (current != nullptr) {
-		ListElement* temp = current->next;
-		delete current;
-		current = temp;
+	for (int count = 0; current != nullptr; current = current->next) {
+		if (current->key == key) {
+			count++;
+			if (count == occurence) {
+				return true;
+			}
+		}
 	}
-	this->first = nullptr;
-	std::cout << "END OF DECONSTRUCTOR" << std::endl;
+	return false;
 }
 
-template<typename key_type, typename value_type> SLL<key_type, value_type>::
-SLL(SLL&& source) : first(source.first), last(source.last), elements_nr(source.elements_nr) {
-	std::cout << "START OF MOVE CONSTRUCTOR !!" << std::endl;
-	source.first = nullptr;
-	source.last = nullptr;
-	std::cout << "END OF MOVE CONSTRUCTOR !!" << std::endl;
+template<typename key_type, typename value_type>
+typename SLL<key_type, value_type>::IteratorConst SLL<key_type, value_type>::begin() const
+{
+	return IteratorConst(first);
 }
 
-template<typename key_type, typename value_type> SLL<key_type, value_type>::
-SLL(const SLL& source) : first(nullptr), last(nullptr), elements_nr(0) {
-	std::cout << "START OF COPY CONSTRUCTOR" << std::endl;
-	for (ListElement* current = source.first; current != nullptr; current = current->next) {
-		this->insert_back(current->key, current->value);
-	}
-	std::cout << "END OF COPY CONSTRUCTOR" << std::endl;
+template<typename key_type, typename value_type>
+typename SLL<key_type, value_type>::IteratorVar SLL<key_type, value_type>::begin()
+{
+	return IteratorVar(first);
 }
+
+template<typename key_type, typename value_type>
+int SLL<key_type, value_type>::get_element_nr()
+{
+	return elements_nr;
+}
+
+template<typename key_type, typename value_type>
+typename SLL<key_type, value_type>::ListElement* SLL<key_type, value_type>::find(const key_type key, int occurence) const
+{
+	ListElement* current = first;
+	for (int count = 0; current != nullptr; current = current->next) {
+		if (current->key == key) {
+			count++;
+			if (count == occurence)
+				return current;
+		}
+	}
+	return nullptr;
+}
+// END OF OTHER FUNCTIONS IMPLEMENTATIONS
+
+/// ----- END OF SLL CLASS METHODS IMPLEMENTATIONS -----------
+
+
+//START OF ITERATOR IMPLEMENTATION
+
+template<typename key_type, typename value_type>
+SLL<key_type, value_type>::IteratorBase::IteratorBase(ListElement* current) : current(current) {
+}
+
+template<typename key_type, typename value_type>
+typename SLL<key_type, value_type>:: IteratorBase& SLL<key_type, value_type>::IteratorBase::operator++() {
+	if (current == nullptr)
+		throw std::out_of_range("End of list already reached!");
+
+	current = current->next;
+	return *this;
+}
+
+template<typename key_type, typename value_type>
+typename SLL<key_type, value_type>::IteratorBase SLL<key_type, value_type>::IteratorBase::operator++(int) {
+	if (current == nullptr)
+		throw std::out_of_range("There is no other element!");
+	IteratorBase old = *this;
+	current = current->next;
+	return *this;
+}
+
+
+template<typename key_type, typename value_type>
+SLL<key_type, value_type>::IteratorVar::IteratorVar(ListElement* current) : IteratorBase(current) {
+}
+template<typename key_type, typename value_type>
+SLL<key_type, value_type>::IteratorConst::IteratorConst(ListElement* current) : IteratorBase(current) {
+}
+
+template<typename key_type, typename value_type>
+std::pair<key_type &, value_type &> SLL<key_type, value_type>::IteratorVar::operator*() {
+	return std::pair<key_type &, value_type &>(this->current->key, this->current->value);
+}
+
+template<typename key_type, typename value_type>
+std::pair<key_type, value_type> SLL<key_type, value_type>::IteratorConst::operator*() const{
+	return std::pair<key_type, value_type>(this->current->key, this->current->value);
+}
+
+//END OF ITERATOR IMPLEMENTATION
+
+
+//START OF LIST_ELEMENT IMPLEMENTATION
+template<typename key_type, typename value_type>
+SLL<key_type, value_type>::ListElement::ListElement(key_type key, value_type value, ListElement * next)
+{
+	this->key = key;
+	this->value = value;
+	this->next = next;
+}
+
+template<typename key_type, typename value_type>
+SLL<key_type, value_type>::ListElement::~ListElement()
+{
+	next = nullptr;
+}
+//END OF LIST ELEMENT IMPLEMENTATION
 
 #endif

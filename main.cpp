@@ -6,6 +6,10 @@
 
 #define SHOW_FUNCTIONALITY
 
+/*
+To test if the list implementation is working I created the 'Person' class. I tested list different pairs of key and value
+types, including std::string as a key and Person as value.
+*/
 
 class Person {
 public:
@@ -17,21 +21,23 @@ public:
     }
 
     Person() : Person(rand() % 60 + 40, rand() % 2 == 0, rand() % 50 + 150) {
-
+        //creates a ranom person.
     }
     friend std::ostream& operator<<(std::ostream& stream, const Person & my_person){
         stream << "(weight: " << my_person.weight << ", sex: " << my_person.sex << ", height: " << my_person.height << ")";
         return stream;
     }
 };
-
 template class SLL<std::string, Person>;
 
-void print_people_list(const SLL<std::string, Person> & list);
-template<typename key_type, typename value_type> SLL<key_type, value_type> 
-shuffle(const SLL<key_type, value_type> & list1, int len1, const SLL<key_type, value_type> & list2, int len2, int repeat);
+
+//The function from laboratory which shuffle two lists.
+template<typename key_type, typename value_type> SLL<key_type, value_type>
+shuffle(const SLL<key_type, value_type>& list1, int len1, const SLL<key_type, value_type>& list2, int len2, int repeat);
+
 
 void show_functionality();
+void print_people_list(const SLL<std::string, Person>& list);
 
 int main() {
     srand((unsigned)time(0));
@@ -58,12 +64,30 @@ int main() {
     std::cout << "This is the shuffled list: \n";
     print_people_list(shuffled_list);
 
-#ifdef SHOW_FUNCTIONALITY
     show_functionality();
-#endif // SHOW_FUNCTIONALITY
-
 
     return 0;
+}
+
+template<typename key_type, typename value_type>  SLL<key_type, value_type>
+shuffle(const SLL<key_type, value_type>& list1, int len1, const SLL<key_type, value_type>& list2, int len2, int repeat) {
+    int step = 1;
+    SLL<key_type, value_type> result_list;
+
+    for (auto iterator1 = list1.begin(), iterator2 = list2.begin();
+        step <= repeat && (iterator1 != nullptr || iterator2 != nullptr); step++) {
+
+        for (int count = 1; iterator1 != nullptr && count <= len1; ++iterator1, count++) {
+            std::pair<key_type, value_type> my_pair = *iterator1;
+            result_list.insert_back(my_pair.first, my_pair.second);
+        }
+        for (int count = 1; iterator2 != nullptr && count <= len2; ++iterator2, count++) {
+            std::pair<key_type, value_type> my_pair = *iterator2;
+            result_list.insert_back(my_pair.first, my_pair.second);
+        }
+    }
+
+    return result_list;
 }
 
 void print_people_list(const SLL<std::string, Person> & list) {
@@ -75,30 +99,6 @@ void print_people_list(const SLL<std::string, Person> & list) {
     if (i == 0) {
         std::cout << "(Empty List)" << std::endl;
     }
-}
-
-
-
-template<typename key_type, typename value_type>  SLL<key_type, value_type> 
-shuffle(const SLL<key_type, value_type> & list1, int len1, const SLL<key_type, value_type> & list2, int len2, int repeat) {
-    int step = 1;
-    SLL<key_type, value_type> result_list;
-
-    for (auto iterator1 = list1.begin(), iterator2 = list2.begin();
-        step <= repeat && (iterator1 != nullptr || iterator2 != nullptr); step++) {
-
-        for (int count = 1; iterator1 != nullptr && count<=len1; ++iterator1, count++) {
-            std::pair<key_type, value_type> my_pair = *iterator1;
-            result_list.insert_back(my_pair.first, my_pair.second);
-        }
-        for (int count = 1; iterator2 != nullptr && count <= len2; ++iterator2, count++) {
-            std::pair<key_type, value_type> my_pair = *iterator2;
-            result_list.insert_back(my_pair.first, my_pair.second);
-        }
-
-    }
-
-    return result_list;
 }
 
 void show_functionality() {
@@ -122,8 +122,8 @@ void show_functionality() {
     print_people_list(list1);
 
     std::cout << "\n\nInserting person after first Angela, and after second Angela." << std::endl;
-    list1.insert_middle("Julia", Person(), "Angela", 1);
-    list1.insert_middle("Scarlett", Person(), "Angela", 2);
+    list1.insert_after("Julia", Person(), "Angela", 1);
+    list1.insert_after("Scarlett", Person(), "Angela", 2);
     std::cout << "list1:" << std::endl;
     print_people_list(list1);
 
@@ -174,15 +174,15 @@ void show_functionality() {
     print_people_list(list2);
 
 
-    std::cout << "\n\nIterating through const list to print only names starting with 'A': " << std::endl;
+    std::cout << "\n\nIterating through const list to print only people taller than 170: " << std::endl;
     int i = 0;
-    for (auto my_iterator = list2.begin(); my_iterator != nullptr; ++my_iterator) {
+    for (auto my_iterator = list2.begin(); my_iterator != nullptr; ++my_iterator, ++i) {
         std::pair<std::string, Person> my_pair = *my_iterator;
         if(my_pair.second.height>170)
             std::cout << i << ": " << my_pair.first << "; " << my_pair.second << std::endl;
     }
 
-    std::cout << "\n\nIterating through var list:" << std::endl;
+    std::cout << "\n\nIterating through var list and altering some keys and values:" << std::endl;
     for (auto my_iterator = list1.begin(); my_iterator != nullptr; ++my_iterator) {
         std::pair<std::string &, Person &> my_pair = *my_iterator;
         if (my_pair.first[0] == 'A')
@@ -195,7 +195,7 @@ void show_functionality() {
     std::cout << "list1:" << std::endl;
     print_people_list(list1);
 
-    std::cout << "Clearing list1:" << std::endl;
+    std::cout << "\n\nClearing list1:" << std::endl;
     list1.clear();
     std::cout << "list1:" << std::endl;
     print_people_list(list1);

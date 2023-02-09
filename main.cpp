@@ -31,10 +31,6 @@ public:
 template class SLL<std::string, Person>;
 
 
-//The function from laboratory which shuffle two lists.
-template<typename key_type, typename value_type> SLL<key_type, value_type>
-shuffle(const SLL<key_type, value_type>& list1, int len1, const SLL<key_type, value_type>& list2, int len2, int repeat);
-
 
 void show_functionality();
 void print_people_list(const SLL<std::string, Person>& list);
@@ -42,53 +38,11 @@ void print_people_list(const SLL<std::string, Person>& list);
 int main() {
     srand((unsigned)time(0));
 
-    //Start CREATING TWO LISTS
-    SLL<std::string, Person>list1;
-    SLL<std::string, Person> list2;
-    std::string names[32] = { "Michalina", "John", "Julia", "Andrew", "Michael", "Simon", "Angela", "Michael",
-    "Thomas", "George", "George", "Ryan", "Gary", "Eric", "Jonathan", "Brandon", "Brandon", "Aaron", "Kyle",
-        "Christian", "Terry", "Arthur", "Jordan", "Logan", "Vincent", "Bobby", "Terry", "Jeremy", "Jose", "Patrick", "Jack", "Mathew"};
-    for (int i = 0; i < 32; i+=2) {
-        list1.insert_back(names[i], Person());
-        list2.insert_back(names[i+1], Person());
-    }
-    //END CREATING TWO LISTS
-
-    std::cout << "This is the first list: \n";
-    print_people_list(list1);
-    std::cout << "\n\nThis is the second list: \n";
-    print_people_list(list2);
-    std::cout << "\n\n\n Starting shuffling. \n";
-
-    SLL<std::string, Person> shuffled_list = shuffle<std::string, Person>(list1, 3, list2, 1, 5);
-    std::cout << "This is the shuffled list: \n";
-    print_people_list(shuffled_list);
-
     show_functionality();
 
     return 0;
 }
 
-template<typename key_type, typename value_type>  SLL<key_type, value_type>
-shuffle(const SLL<key_type, value_type>& list1, int len1, const SLL<key_type, value_type>& list2, int len2, int repeat) {
-    int step = 1;
-    SLL<key_type, value_type> result_list;
-
-    for (auto iterator1 = list1.begin(), iterator2 = list2.begin();
-        step <= repeat && (iterator1 != nullptr || iterator2 != nullptr); step++) {
-
-        for (int count = 1; iterator1 != nullptr && count <= len1; ++iterator1, count++) {
-            std::pair<key_type, value_type> my_pair = *iterator1;
-            result_list.insert_back(my_pair.first, my_pair.second);
-        }
-        for (int count = 1; iterator2 != nullptr && count <= len2; ++iterator2, count++) {
-            std::pair<key_type, value_type> my_pair = *iterator2;
-            result_list.insert_back(my_pair.first, my_pair.second);
-        }
-    }
-
-    return result_list;
-}
 
 void print_people_list(const SLL<std::string, Person> & list) {
     int i=0;
@@ -109,7 +63,7 @@ void show_functionality() {
 
 
     std::cout << "\n\nInserting one element to list1: " << std::endl;
-    list1.insert_front("George", Person{ rand() % 60 + 40, rand() % 2 == 0,rand() % 50 + 150 });
+    list1.insert_front("George", Person());
     std::cout << "list1:" << std::endl;
     print_people_list(list1);
 
@@ -128,7 +82,7 @@ void show_functionality() {
     print_people_list(list1);
 
 
-    std::cout << "\n\nMaking an deep copy of a list:";
+    std::cout << "\n\nMaking an deep copy of a list:\n";
     const SLL<std::string, Person> list2 = list1;
     std::cout << "list1:" << std::endl;
     print_people_list(list1);
@@ -137,13 +91,13 @@ void show_functionality() {
 
 
     std::cout << "\n\nAccessing elements of an const object." << std::endl;
-    Person my_person = list1.get_first();
+    Person my_person = list2.get_first();
     std::cout << "first person:"<<my_person << std::endl;
-     my_person = list1.get_last();
+     my_person = list2.get_last();
     std::cout << "last person:" << my_person << std::endl;
-     my_person = list1.get_value("Matilda");
+     my_person = list2.get_value("Matilda");
     std::cout << "First person got by key 'Matilda':" << my_person << std::endl;
-     my_person = list1.get_value("Matilda", 2);
+     my_person = list2.get_value("Matilda", 2);
     std::cout << "Second person got by key 'Matilda':" << my_person << std::endl;
 
 
@@ -157,7 +111,7 @@ void show_functionality() {
     std::cout << "list2:" << std::endl;
     print_people_list(list2);
 
-    std::cout << "\n\nDeleting some elements from first ist";
+    std::cout << "\n\nDeleting some elements from first the list\n";
     list1.delete_element("Angela", 2);
     list1.delete_first();
     list1.delete_last();

@@ -249,6 +249,7 @@ bool SLL<key_type, value_type>::insert_after(const key_type key, const value_typ
 	after_element->next = new ListElement(key, value, after_element->next);
 	if (after_element == last)
 		last = after_element->next;
+	return true;
 }
 // END OF INSERTING ELEMENTS FUNCTIONS IMPLEMENTATIONS
 

@@ -1,5 +1,7 @@
 # Singly Linked List
-<br/>This is an implementation of the Singly Linked List. In this file, there is described how you can use this implementation. The content of this fiile is basically the same as content of the [main.cpp file](main.cpp). In both (this and main.cpp) files there is explained how to use this implementation, here in simple text, in main.cpp in comments. If you prefer to read code instead of README.md file, you can just read function 'show_functionality' which is in main.cpp file. You will know just as much, as after reading this file.
+<br/>This is an implementation of the Singly Linked List. In this file, there is described how you can use this implementation. The content of this fiile is basically the same as content of the [main.cpp file](main.cpp). In both (this and main.cpp) files there is explained how to use this implementation, here in simple text, in main.cpp in comments. If you prefer to read code instead of README.md file, you can just read function 'show_functionality' which is in main.cpp file. You will know just as much, as after reading this file. On the end of this (README.md) file there is a screenshot of output of function 'show_functionality'.
+
+<br/> To use this implementation you only need to include SLL.h file into your code.
 
 <br/><br/>For purpuse of this tutorial I created a simple class called Person. In this tutorial I will create a SLL (Singly Linked List) which keys wille be of type String and values of type Person. Then I will play with this list, so you can see how to use it. This is class person:
 ~~~ c++
@@ -151,6 +153,12 @@ Here is how you can clear the list:
 list1.clear();
 ~~~
 And now list is empty.
+<br/><br/><br/>
+### Whole output of 'show_functionality' function.
+![output1](img/full_output1.png)
+![output2](img/full_output2.png)
+![output3](img/full_output3.png)
+
 
 
 
